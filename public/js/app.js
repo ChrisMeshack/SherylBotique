@@ -51,7 +51,7 @@ function renderProducts(items) {
         const card = document.createElement('div');
         card.className = 'product-card';
         
-        const imgSrc = product.image.startsWith('http') ? product.image : '/' + product.image;
+        const imgSrc = product.image.startsWith('http') || product.image.startsWith('data:') ? product.image : '/' + product.image;
         const stockBadge = product.inStock === false ? '<div class="stock-badge">Out of Stock</div>' : '';
         const btnClass = product.inStock === false ? 'add-to-cart disabled' : 'add-to-cart';
         const btnState = product.inStock === false ? 'disabled' : `onclick="addToCart(${product.id})"`;
@@ -59,7 +59,7 @@ function renderProducts(items) {
 
         card.innerHTML = `
             <div style="position:relative; cursor: pointer; width: 100%; padding-top: 100%; overflow: hidden; border-radius: 10px; margin-bottom: 1rem;" onclick="openProductDetails(${product.id})">
-                <img src="${imgSrc}" alt="${product.name}" class="prod-image" style="position: absolute; top:0; left:0; width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
+                <img src="${imgSrc}" onerror="this.onerror=null; this.src='https://via.placeholder.com/500?text=Image+Unavailable';" alt="${product.name}" class="prod-image" style="position: absolute; top:0; left:0; width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
                 ${stockBadge}
             </div>
             <div class="prod-info" style="display: flex; flex-direction: column; flex: 1; text-align: center;">
@@ -161,14 +161,14 @@ function openProductDetails(id) {
     const product = products.find(p => p.id === id);
     if (!product) return;
     
-    const imgSrc = product.image.startsWith('http') ? product.image : '/' + product.image;
+    const imgSrc = product.image.startsWith('http') || product.image.startsWith('data:') ? product.image : '/' + product.image;
     const btnClass = product.inStock === false ? 'add-to-cart disabled' : 'add-to-cart';
     const btnState = product.inStock === false ? 'disabled' : `onclick="addToCart(${product.id}); closeProductDetails();"`;
     const btnText = product.inStock === false ? 'Unavailable' : 'Add to Cart';
 
     detailsBody.innerHTML = `
         <div style="flex: 1; min-width: 300px; display: flex; align-items: center; justify-content: center; background: #fafafa;">
-            <img src="${imgSrc}" alt="${product.name}" style="max-width: 100%; max-height: 500px; object-fit: contain; border-top-left-radius: 10px; border-bottom-left-radius: 10px;">
+            <img src="${imgSrc}" onerror="this.onerror=null; this.src='https://via.placeholder.com/500?text=Image+Unavailable';" alt="${product.name}" style="max-width: 100%; max-height: 500px; object-fit: contain; border-top-left-radius: 10px; border-bottom-left-radius: 10px;">
         </div>
         <div style="flex: 1; padding: 2.5rem; min-width: 300px; display: flex; flex-direction: column; justify-content: center;">
             <div class="category" style="color: #8F5571; font-weight: 600; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 0.5rem; letter-spacing: 1px;">${product.category}</div>
