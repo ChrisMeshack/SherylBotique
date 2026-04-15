@@ -1,0 +1,93 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "Men's Classic Shirt",
+      "price": 1500,
+      "category": "Men",
+      "image": "https://images.unsplash.com/photo-1596755094514-f87e32f85e98?auto=format&fit=crop&w=500&q=80",
+      "description": "A quality item from Sheryl Boutique."
+    },
+    {
+      "id": 2,
+      "name": "Women's Elegant Skirt",
+      "price": 2000,
+      "category": "Women",
+      "image": "https://images.unsplash.com/photo-1583496661160-c58cb2206269?auto=format&fit=crop&w=500&q=80",
+      "description": "A quality item from Sheryl Boutique."
+    },
+    {
+      "id": 3,
+      "name": "Kids Casual Outfit",
+      "price": 1200,
+      "category": "Kids",
+      "image": "https://images.unsplash.com/photo-1519241047957-be31d7379a5d?auto=format&fit=crop&w=500&q=80",
+      "description": "A quality item from Sheryl Boutique."
+    },
+    {
+      "id": 4,
+      "name": "Leather Shoes (Men)",
+      "price": 4500,
+      "category": "Shoes",
+      "image": "https://images.unsplash.com/photo-1614252339460-e1caad5188bf?auto=format&fit=crop&w=500&q=80",
+      "description": "A quality item from Sheryl Boutique."
+    },
+    {
+      "id": 5,
+      "name": "Women's Heels",
+      "price": 3500,
+      "category": "Shoes",
+      "image": "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=500&q=80",
+      "description": "A quality item from Sheryl Boutique."
+    },
+    {
+      "id": 6,
+      "name": "Designer Trousers (Women)",
+      "price": 2500,
+      "category": "Women",
+      "image": "https://images.unsplash.com/photo-1509631179647-0c114314777c?auto=format&fit=crop&w=500&q=80",
+      "description": "A quality item from Sheryl Boutique."
+    },
+    {
+      "id": 7,
+      "name": "Kids Denim Jacket",
+      "price": 1800,
+      "category": "Kids",
+      "image": "https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=500&q=80",
+      "description": "A quality item from Sheryl Boutique."
+    },
+    {
+      "id": 8,
+      "name": "Men's Leather Jacket",
+      "price": 6500,
+      "category": "Men",
+      "image": "https://images.unsplash.com/photo-1521223830155-f2cb1aa281e4?auto=format&fit=crop&w=500&q=80",
+      "description": "A quality item from Sheryl Boutique."
+    },
+    {
+      "id": 9,
+      "name": "Women's Handbag",
+      "price": 2200,
+      "category": "Women",
+      "image": "https://images.unsplash.com/photo-1584916201218-f4242ceb4809?auto=format&fit=crop&w=500&q=80",
+      "description": "A quality item from Sheryl Boutique."
+    },
+    {
+      "id": 10,
+      "name": "Formal Men's Shoes",
+      "price": 4000,
+      "category": "Shoes",
+      "image": "https://images.unsplash.com/photo-1588602635925-50a8d46fb59b?auto=format&fit=crop&w=500&q=80",
+      "description": "A quality item from Sheryl Boutique."
+    },
+    {
+      "id": 11,
+      "name": "Men bags",
+      "category": "Men",
+      "price": 1400,
+      "inStock": false,
+      "image": "images/1776279696600-KMTC LOGO.png",
+      "description": "A quality item from Sheryl Boutique."
+    }
+  ]
+}

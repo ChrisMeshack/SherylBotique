@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | Sheryl Boutique</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .login-container { display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .login-box { background: white; padding: 3rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); width: 100%; max-width: 400px; text-align: center; border: 1px solid rgba(231, 217, 255, 0.4);}
+        .login-box h2 { color: #8F5571; margin-bottom: 2rem; }
+        .form-group { margin-bottom: 1.5rem; text-align: left; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+        .form-group input { width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px; font-family: 'Outfit'; }
+        .login-btn { width: 100%; background: #8F5571; color: white; padding: 1rem; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .login-btn:hover { background: #73435b; }
+        .error { color: #d9534f; margin-top: 1rem; display: none; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <h2>Admin Portal</h2>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" value="admin">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" value="admin123">
+            </div>
+            <button class="login-btn" id="login-btn">Login</button>
+            <p class="error" id="error-msg">Invalid credentials</p>
+            <p style="margin-top:2rem; font-size:0.8rem;"><a href="/" style="color:#8F5571;">Back to shop</a></p>
+        </div>
+    </div>
+    <script>
+        document.getElementById('login-btn').addEventListener('click', async () => {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const res = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({username: u, password: p})
+            });
+            const data = await res.json();
+            if(data.success) {
+                window.location.href = '/admin';
+            } else {
+                document.getElementById('error-msg').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+node_modules/
+.env
+public/images/*
+!public/images/.gitkeep
+
+# Ignore DB files if you want to start fresh on server
+# users.json
+# data.json
+# orders.json

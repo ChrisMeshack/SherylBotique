@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sheryl Boutique | Kitale's Finest Clothing</title>
+    <!-- We will use compiled style.css from SASS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <h1>Sheryl <span>Boutique</span></h1>
+            </div>
+            
+            <div class="hamburger" id="hamburger-menu">
+                <i class="fas fa-bars"></i>
+            </div>
+
+            <div class="nav-links" id="nav-links">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#shop" class="nav-link">Menu</a>
+                <a href="#contact" class="nav-link">Contact</a>
+                <a href="/auth.html" id="nav-signin" class="nav-link">Sign In</a>
+            </div>
+            <div class="cart-icon" id="cart-btn">
+                <i class="fas fa-shopping-bag"></i>
+                <span class="cart-badge" id="cart-count">0</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h2>Welcome to Kitale's Premium Fashion Destination</h2>
+            <p>Discover elegance and comfort for men, women, and kids with our curated collections of clothing and shoes.</p>
+            <a href="#shop" class="cta-btn">Explore Collection</a>
+        </div>
+    </section>
+
+    <!-- Shop/Catalogue Section -->
+    <section id="shop" class="shop">
+        <div class="section-title">
+            <h2>Our Collections</h2>
+            <p>Handpicked style, just for you.</p>
+        </div>
+
+        <div class="filters" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="filter-item filter-btn active" data-filter="all">All</button>
+                <div class="dropdown">
+                    <button class="filter-btn dropdown-btn">Category <i class="fas fa-chevron-down"></i></button>
+                    <div class="dropdown-content">
+                        <button class="filter-item" data-filter="Men">Men</button>
+                        <button class="filter-item" data-filter="Women">Women</button>
+                        <button class="filter-item" data-filter="Kids">Kids</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="search-bar" style="position: relative;">
+                <input type="text" id="search-input" placeholder="Search products..." style="padding: 0.8rem 1rem; border-radius: 20px; border: 1px solid #ddd; outline: none; width: 250px; font-family: 'Outfit';">
+                <i class="fas fa-search" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #888;"></i>
+            </div>
+        </div>
+
+        <div class="product-grid" id="product-grid">
+            <!-- Products will be dynamically loaded here by JS -->
+            <div class="loading">Loading our boutique collections...</div>
+        </div>
+    </section>
+
+    <!-- Product Details Modal -->
+    <div class="modal" id="details-modal">
+        <div class="modal-content" style="max-width: 800px; padding: 0;">
+            <span class="close-btn" id="close-details-modal" style="position: absolute; right: 15px; top: 15px; z-index: 10; background: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); cursor: pointer;">&times;</span>
+            <div class="details-body" id="details-body" style="display: flex; flex-wrap: wrap;">
+                <!-- Dynamically loaded details -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Paybill / Cart Modal -->
+    <div class="modal" id="cart-modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-modal">&times;</span>
+            <h2>Your Shopping Bag</h2>
+            <div class="cart-items" id="cart-items">
+                <!-- Cart items load here -->
+            </div>
+            <div class="cart-summary">
+                <div class="total">
+                    <span>Total:</span>
+                    <span id="cart-total">KSH 0</span>
+                </div>
+                
+                <div class="checkout-paybill">
+                    <h3>Checkout via M-Pesa Paybill</h3>
+                    <p>To complete your order, follow these steps:</p>
+                    <ol>
+                        <li>Go to M-Pesa Menu and select <strong>Lipa na M-Pesa</strong>.</li>
+                        <li>Select <strong>Pay Bill</strong>.</li>
+                        <li>Enter Business Number: <strong>(Provided on Order)</strong></li>
+                        <li>Alternatively, Buy Goods to Till or send to our official line: <br><strong class="highlight">0732 985 735</strong>.</li>
+                        <li>Enter the exact amount <strong><span id="paybill-amount">0</span></strong>.</li>
+                        <li>Enter your M-Pesa PIN and confirm.</li>
+                    </ol>
+                    <div class="form-group">
+                        <label for="mpesa-code">Enter M-Pesa Confirmation Code:</label>
+                        <input type="text" id="mpesa-code" placeholder="e.g. QKX8... ">
+                    </div>
+                    <button class="pay-btn" id="confirm-order-btn">Confirm Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer id="contact">
+        <div class="footer-content">
+            <div class="footer-col">
+                <h3>Sheryl Boutique</h3>
+                <p>Located in the heart of Kitale Town.</p>
+                <p><i class="fas fa-phone-alt"></i> 0732 985 735</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Sheryl Boutique. All Rights Reserved.</p>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: rgba(255,255,255,0.8);">
+                Developed by Chris Meshack | 
+                <a href="mailto:chrismeshackworks@gmail.com" style="color: #F6E3EA; text-decoration: none;">chrismeshackworks@gmail.com</a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- App JS -->
+    <script src="js/app.js"></script>
+</body>
+</html>
