@@ -21,19 +21,8 @@ function getDbPath(filename) {
 const compression = require('compression');
 const crypto = require('crypto');
 
-// Configure multer for image uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = path.join(__dirname, 'public', 'images');
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname.replace(/\\s+/g, '-'));
-    }
-});
+// Configure multer for memory storage (Serverless compatible)
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 const app = express();
@@ -200,6 +189,11 @@ app.post('/api/products', requireAdmin, upload.single('image'), (req, res) => {
     const products = getProducts();
     const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
     
+    let imageStr = "https://via.placeholder.com/500";
+    if (req.file) {
+        imageStr = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    }
+
     const newProduct = {
         id: newId,
         name: req.body.name,
@@ -207,7 +201,7 @@ app.post('/api/products', requireAdmin, upload.single('image'), (req, res) => {
         category: req.body.category,
         price: Number(req.body.price),
         inStock: req.body.inStock === 'true',
-        image: req.file ? `images/${req.file.filename}` : "https://via.placeholder.com/500" // Fallback
+        image: imageStr
     };
     
     products.push(newProduct);
@@ -222,6 +216,12 @@ app.put('/api/products/:id', requireAdmin, upload.single('image'), (req, res) =>
     if (idx === -1) return res.status(404).json({ error: 'Product not found' });
     
     const currentProduct = products[idx];
+    
+    let imageStr = currentProduct.image;
+    if (req.file) {
+        imageStr = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    }
+
     products[idx] = {
         ...currentProduct,
         name: req.body.name || currentProduct.name,
@@ -229,7 +229,7 @@ app.put('/api/products/:id', requireAdmin, upload.single('image'), (req, res) =>
         category: req.body.category || currentProduct.category,
         price: req.body.price ? Number(req.body.price) : currentProduct.price,
         inStock: req.body.inStock !== undefined ? req.body.inStock === 'true' : currentProduct.inStock,
-        image: req.file ? `images/${req.file.filename}` : currentProduct.image
+        image: imageStr
     };
     
     saveProducts(products);
