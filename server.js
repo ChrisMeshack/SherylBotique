@@ -1,8 +1,23 @@
 const express = require('express');
-const session = require('express-session');
+const cookieSession = require('cookie-session');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const multer = require('multer');
+
+// Vercel Serverless File System Handler
+function getDbPath(filename) {
+    const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
+    const originalPath = path.join(__dirname, filename);
+    if (!isVercel) return originalPath;
+    
+    // On Vercel, redirect writes securely to the /tmp folder
+    const tmpPath = path.join(os.tmpdir(), filename);
+    if (!fs.existsSync(tmpPath) && fs.existsSync(originalPath)) {
+        fs.copyFileSync(originalPath, tmpPath);
+    }
+    return tmpPath;
+}
 const compression = require('compression');
 const crypto = require('crypto');
 
@@ -30,16 +45,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Session for admin
-app.use(session({
+// Trust Proxy structurally for Vercel HTTPS environments
+app.set('trust proxy', 1);
+
+// Cookie-based Session for admin & users (Survives Serverless restarts)
+app.use(cookieSession({
+    name: 'sheryl-session',
     secret: 'sheryl-boutique-secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-        secure: false, // Set to true if using HTTPS
-        httpOnly: true,
-        sameSite: 'strict'
-    } 
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
 }));
 
 // Basic route
@@ -57,7 +73,7 @@ app.get('/admin', (req, res) => {
 });
 
 // Auth endpoints
-const usersDbPath = path.join(__dirname, 'users.json');
+const usersDbPath = getDbPath('users.json');
 
 // Helper to get users
 function getUsers() {
@@ -132,12 +148,12 @@ app.post('/api/auth/forgot-password', (req, res) => {
 });
 
 app.post('/api/admin/logout', (req, res) => {
-    req.session.destroy();
+    req.session = null;
     res.json({ success: true });
 });
 
 // Products API
-const dataFile = path.join(__dirname, 'data.json');
+const dataFile = getDbPath('data.json');
 
 // Init default data if empty
 function getProducts() {
@@ -229,7 +245,7 @@ app.delete('/api/products/:id', requireAdmin, (req, res) => {
 });
 
 // Orders API (FR-13: Store submitted transaction details)
-const ordersFile = path.join(__dirname, 'orders.json');
+const ordersFile = getDbPath('orders.json');
 
 function getOrders() {
     try {
