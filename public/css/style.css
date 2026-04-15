@@ -90,12 +90,12 @@ h1, h2, h3 {
 .navbar .nav-container .cart-icon .cart-badge {
   position: absolute;
   top: -8px;
-  right: -10px;
+  right: -12px;
   background-color: #E7D9FF;
   color: #8F5571;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: bold;
-  padding: 2px 6px;
+  padding: 3px 8px;
   border-radius: 50%;
   border: 2px solid #fff;
 }
@@ -475,6 +475,7 @@ footer .footer-bottom {
   .navbar .cart-icon {
     order: 1;
     margin-right: 1rem;
+    font-size: 1.8rem;
   }
   .navbar .nav-links {
     display: none;
@@ -497,31 +498,50 @@ footer .footer-bottom {
     margin: 0.5rem 0;
     width: 100%;
     text-align: center;
-    padding: 0.5rem;
+    padding: 0.8rem;
+    font-size: 1.2rem;
+  }
+  .hero {
+    padding: 4rem 1.5rem;
   }
   .hero h2 {
-    font-size: 2rem;
+    font-size: 2.2rem;
+    line-height: 1.2;
+  }
+  .hero p {
+    font-size: 1.1rem;
+    color: #444;
+    font-weight: 500;
   }
   .filters {
     flex-direction: column;
     align-items: stretch;
   }
+  .filters .filter-btn, .filters .dropdown, .filters .dropdown-btn {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.1rem;
+  }
   .filters .search-bar {
     width: 100%;
-    margin-top: 10px;
+    margin-top: 15px;
   }
   .filters .search-bar input {
     width: 100%;
+    padding: 1.2rem 1.5rem;
+    font-size: 1.1rem;
   }
-  .filters .dropdown {
-    width: 100%;
-    text-align: center;
-  }
-  .filters .dropdown-btn {
-    width: 100%;
+  .filters .search-bar i {
+    font-size: 1.2rem;
+    right: 20px;
   }
   .filters .dropdown-content {
     width: 100%;
+    text-align: center;
+    font-size: 1.1rem;
+  }
+  .filters .dropdown-content .filter-item {
+    padding: 1rem;
   }
 }
 

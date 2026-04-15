@@ -97,6 +97,15 @@
       "price": 440,
       "inStock": true,
       "image": "images/1776288697485-Screenshot (82).png"
+    },
+    {
+      "id": 13,
+      "name": "Kids Shoes",
+      "description": "kids",
+      "category": "Kids",
+      "price": 600,
+      "inStock": true,
+      "image": "images/1776290310673-Screenshot (230).png"
     }
   ]
 }
