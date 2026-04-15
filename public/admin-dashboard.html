@@ -146,7 +146,7 @@
                 tbody.innerHTML += `
                     <tr>
                         <td>#${p.id}</td>
-                        <td><img src="${p.image.startsWith('http') ? p.image : '/' + p.image}" width="50" style="border-radius:5px; height:50px; object-fit:cover;"></td>
+                        <td><img src="${p.image.startsWith('http') || p.image.startsWith('data:') ? p.image : '/' + p.image}" onerror="this.onerror=null; this.src='https://via.placeholder.com/50?text=NA';" width="50" style="border-radius:5px; height:50px; object-fit:cover;"></td>
                         <td>${p.name}</td>
                         <td>${p.category}</td>
                         <td>KSH ${p.price.toLocaleString()}</td>
