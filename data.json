@@ -88,6 +88,15 @@
       "inStock": false,
       "image": "images/1776279696600-KMTC LOGO.png",
       "description": "A quality item from Sheryl Boutique."
+    },
+    {
+      "id": 12,
+      "name": "Men bags",
+      "description": "Fashion",
+      "category": "Men",
+      "price": 440,
+      "inStock": true,
+      "image": "images/1776288697485-Screenshot (82).png"
     }
   ]
 }

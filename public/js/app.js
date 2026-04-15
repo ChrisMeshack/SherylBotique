@@ -59,7 +59,7 @@ function renderProducts(items) {
 
         card.innerHTML = `
             <div style="position:relative; cursor: pointer; width: 100%; padding-top: 100%; overflow: hidden; border-radius: 10px; margin-bottom: 1rem;" onclick="openProductDetails(${product.id})">
-                <img src="${imgSrc}" onerror="this.onerror=null; this.src='https://via.placeholder.com/500?text=Image+Unavailable';" alt="${product.name}" class="prod-image" style="position: absolute; top:0; left:0; width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
+                <img src="${imgSrc}" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'500\' height=\'500\'><rect width=\'100%\' height=\'100%\' fill=\'%23f0f0f0\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-family=\'sans-serif\' font-size=\'20\' fill=\'%23999\'>No Image</text></svg>';" alt="${product.name}" class="prod-image" style="position: absolute; top:0; left:0; width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
                 ${stockBadge}
             </div>
             <div class="prod-info" style="display: flex; flex-direction: column; flex: 1; text-align: center;">
@@ -168,7 +168,7 @@ function openProductDetails(id) {
 
     detailsBody.innerHTML = `
         <div style="flex: 1; min-width: 300px; display: flex; align-items: center; justify-content: center; background: #fafafa;">
-            <img src="${imgSrc}" onerror="this.onerror=null; this.src='https://via.placeholder.com/500?text=Image+Unavailable';" alt="${product.name}" style="max-width: 100%; max-height: 500px; object-fit: contain; border-top-left-radius: 10px; border-bottom-left-radius: 10px;">
+            <img src="${imgSrc}" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'500\' height=\'500\'><rect width=\'100%\' height=\'100%\' fill=\'%23f0f0f0\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-family=\'sans-serif\' font-size=\'20\' fill=\'%23999\'>No Image</text></svg>';" alt="${product.name}" style="max-width: 100%; max-height: 500px; object-fit: contain; border-top-left-radius: 10px; border-bottom-left-radius: 10px;">
         </div>
         <div style="flex: 1; padding: 2.5rem; min-width: 300px; display: flex; flex-direction: column; justify-content: center;">
             <div class="category" style="color: #8F5571; font-weight: 600; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 0.5rem; letter-spacing: 1px;">${product.category}</div>
