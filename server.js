@@ -131,7 +131,8 @@ app.post('/api/auth/login', async (req, res) => {
             res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
     } catch (err) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        console.error('Login Error:', err);
+        res.status(500).json({ success: false, message: 'Server error: ' + err.message });
     }
 });
 
@@ -151,7 +152,8 @@ app.post('/api/auth/signup', async (req, res) => {
         await User.create({ email, password: hashPassword(password) });
         res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ success: false, message: 'Server error' });
+        console.error('Signup Error:', err);
+        res.status(500).json({ success: false, message: 'Server error: ' + err.message });
     }
 });
 
