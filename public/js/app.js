@@ -33,9 +33,15 @@ async function loadProducts() {
     try {
         const res = await fetch('/api/products');
         products = await res.json();
+        if (!Array.isArray(products)) {
+            console.error('API Error:', products);
+            products = []; // Fallback to empty array
+            productGrid.innerHTML = '<p style="color:#d9534f; text-align:center; grid-column:1/-1; padding: 2rem;">Could not connect to the database. Please ensure Vercel Database Environment Variables are correctly configured.</p>';
+            return;
+        }
         renderProducts(products);
     } catch (err) {
-        productGrid.innerHTML = '<p>Error loading products.</p>';
+        productGrid.innerHTML = '<p style="color:#d9534f; text-align:center; grid-column:1/-1; padding: 2rem;">Error loading products. Please check your connection.</p>';
         console.error(err);
     }
 }
