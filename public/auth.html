@@ -189,6 +189,7 @@
             const email = document.getElementById('forgot-email').value;
             const errEl = document.getElementById('forgot-error');
             const succEl = document.getElementById('forgot-success');
+            const btn = document.querySelector('#view-forgot-password .auth-btn');
             
             errEl.style.display = 'none'; succEl.style.display = 'none';
 
@@ -196,16 +197,27 @@
                 errEl.style.display = 'block'; errEl.innerText = "Please enter your email.";
                 return;
             }
+            
+            btn.disabled = true;
+            btn.innerText = 'Sending Link...';
 
             const res = await fetch('/api/auth/forgot-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({email})
             });
+            const data = await res.json();
             
-            // Assume mock success unconditionally for the demo
-            succEl.style.display = 'block';
-            succEl.innerText = "If the email is verified, a password reset link has been sent.";
+            btn.disabled = false;
+            btn.innerText = 'Send Reset Link';
+            
+            if(data.success) {
+                succEl.style.display = 'block';
+                succEl.innerText = "If the email is registered, a password reset link has been sent.";
+            } else {
+                errEl.style.display = 'block';
+                errEl.innerText = data.message;
+            }
         }
     </script>
 </body>

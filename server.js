@@ -7,9 +7,12 @@ const multer = require('multer');
 const compression = require('compression');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
+const { Resend } = require('resend');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Connect to MongoDB
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -43,7 +46,9 @@ if (MONGODB_URI) {
 // Schemas
 const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true }
+    password: { type: String, required: true },
+    resetToken: { type: String, default: null },
+    resetTokenExpires: { type: Date, default: null }
 });
 const User = mongoose.model('User', userSchema);
 
@@ -157,8 +162,72 @@ app.post('/api/auth/signup', async (req, res) => {
     }
 });
 
-app.post('/api/auth/forgot-password', (req, res) => {
-    res.json({ success: true });
+app.post('/api/auth/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+    if (!MONGODB_URI) return res.status(500).json({ success: false, message: 'Database disconnected' });
+
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            // Return success even if user not found for security purposes
+            return res.json({ success: true });
+        }
+
+        const token = crypto.randomBytes(32).toString('hex');
+        user.resetToken = token;
+        user.resetTokenExpires = Date.now() + 3600000; // 1 hour
+        await user.save();
+
+        const resetLink = `https://sheryl-botique.vercel.app/reset-password.html?token=${token}&email=${encodeURIComponent(email)}`;
+        
+        await resend.emails.send({
+            from: 'Sheryl Boutique Support <onboarding@resend.dev>',
+            to: email,
+            subject: 'Password Reset Request',
+            html: `
+                <div style="font-family: sans-serif; text-align: center; padding: 2rem;">
+                    <h2 style="color: #8F5571;">Sheryl Boutique</h2>
+                    <p>You requested a password reset. Click the button below to set a new password:</p>
+                    <a href="${resetLink}" style="display: inline-block; background-color: #8F5571; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin-top: 20px; font-weight: bold;">Reset Password</a>
+                    <p style="margin-top: 30px; font-size: 12px; color: #666;">This link will expire in 1 hour.</p>
+                </div>
+            `
+        });
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Forgot Pass Error:', err);
+        res.status(500).json({ success: false, message: 'Server error: ' + err.message });
+    }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+    const { email, token, password } = req.body;
+    if (!email || !token || !password) return res.status(400).json({ success: false, message: 'Missing tracking link data or new password.' });
+    if (!MONGODB_URI) return res.status(500).json({ success: false, message: 'Database disconnected' });
+
+    try {
+        const user = await User.findOne({ 
+            email, 
+            resetToken: token, 
+            resetTokenExpires: { $gt: Date.now() } 
+        });
+
+        if (!user) {
+            return res.status(400).json({ success: false, message: 'Invalid or expired reset token. Please request a new link.' });
+        }
+
+        user.password = hashPassword(password);
+        user.resetToken = undefined;
+        user.resetTokenExpires = undefined;
+        await user.save();
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Reset Pass Error:', err);
+        res.status(500).json({ success: false, message: 'Server error: ' + err.message });
+    }
 });
 
 app.post('/api/admin/logout', (req, res) => {
