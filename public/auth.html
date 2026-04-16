@@ -110,12 +110,16 @@
             const email = document.getElementById('login-email').value;
             const password = document.getElementById('login-password').value;
             const errEl = document.getElementById('login-error');
+            const btn = document.querySelector('#view-login .auth-btn');
             
             if(!email || !password) {
                 errEl.style.display = 'block';
                 errEl.innerText = "Please fill all fields.";
                 return;
             }
+            
+            btn.innerText = 'Signing In...';
+            btn.disabled = true;
 
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
@@ -123,6 +127,9 @@
                 body: JSON.stringify({email, password})
             });
             const data = await res.json();
+            
+            btn.innerText = 'Sign In';
+            btn.disabled = false;
             
             if(data.success) {
                 window.location.href = data.redirect;
@@ -138,6 +145,7 @@
             const confirm = document.getElementById('signup-confirm').value;
             const errEl = document.getElementById('signup-error');
             const succEl = document.getElementById('signup-success');
+            const btn = document.querySelector('#view-signup .auth-btn');
             
             errEl.style.display = 'none'; succEl.style.display = 'none';
 
@@ -153,6 +161,9 @@
                 errEl.style.display = 'block'; errEl.innerText = "Passwords do not match!";
                 return;
             }
+            
+            btn.innerText = 'Creating Account...';
+            btn.disabled = true;
 
             const res = await fetch('/api/auth/signup', {
                 method: 'POST',
@@ -160,6 +171,9 @@
                 body: JSON.stringify({email, password})
             });
             const data = await res.json();
+            
+            btn.innerText = 'Sign Up';
+            btn.disabled = false;
             
             if(data.success) {
                 succEl.style.display = 'block';
