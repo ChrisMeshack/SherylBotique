@@ -1,46 +1,90 @@
+require('dotenv').config();
 const express = require('express');
 const cookieSession = require('cookie-session');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const multer = require('multer');
-
-// Vercel Serverless File System Handler
-function getDbPath(filename) {
-    const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
-    const originalPath = path.join(__dirname, filename);
-    if (!isVercel) return originalPath;
-    
-    // On Vercel, redirect writes securely to the /tmp folder
-    const tmpPath = path.join(os.tmpdir(), filename);
-    if (!fs.existsSync(tmpPath) && fs.existsSync(originalPath)) {
-        fs.copyFileSync(originalPath, tmpPath);
-    }
-    return tmpPath;
-}
 const compression = require('compression');
 const crypto = require('crypto');
+const mongoose = require('mongoose');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Connect to MongoDB
+const MONGODB_URI = process.env.MONGODB_URI;
+if (MONGODB_URI) {
+    mongoose.connect(MONGODB_URI)
+        .then(async () => {
+            console.log('Connected to MongoDB via Mongoose');
+            
+            // Auto-migration from data.json for products
+            const count = await Product.countDocuments();
+            if (count === 0) {
+                console.log('Migrating existing products from data.json to MongoDB...');
+                try {
+                    const dataFile = path.join(__dirname, 'data.json');
+                    if (fs.existsSync(dataFile)) {
+                        const data = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
+                        if (data.products && data.products.length > 0) {
+                            await Product.insertMany(data.products);
+                            console.log(`Successfully migrated ${data.products.length} products to MongoDB!`);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Migration failed:', e);
+                }
+            }
+        })
+        .catch(err => console.error('MongoDB connection error:', err));
+} else {
+    console.warn('WARNING: MONGODB_URI is not defined in environment variables. Database operations will not work locally unless set!');
+}
+
+// Schemas
+const userSchema = new mongoose.Schema({
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true }
+});
+const User = mongoose.model('User', userSchema);
+
+const productSchema = new mongoose.Schema({
+    id: { type: Number, required: true, unique: true },
+    name: { type: String, required: true },
+    description: { type: String, default: '' },
+    price: { type: Number, required: true },
+    category: { type: String, required: true },
+    inStock: { type: Boolean, default: true },
+    image: { type: String, required: true }
+});
+const Product = mongoose.model('Product', productSchema);
+
+const orderSchema = new mongoose.Schema({
+    id: { type: Number, required: true, unique: true },
+    mpesaCode: { type: String, required: true },
+    amount: { type: Number, required: true },
+    items: { type: Array, required: true },
+    date: { type: Date, default: Date.now },
+    status: { type: String, default: 'Pending' }
+});
+const Order = mongoose.model('Order', orderSchema);
 
 // Configure multer for memory storage (Serverless compatible)
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-
 // Middleware
 app.use(compression());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Trust Proxy structurally for Vercel HTTPS environments
 app.set('trust proxy', 1);
 
-// Cookie-based Session for admin & users (Survives Serverless restarts)
+// Cookie-based Session
 app.use(cookieSession({
     name: 'sheryl-session',
-    secret: 'sheryl-boutique-secret',
+    secret: process.env.SESSION_SECRET || 'sheryl-boutique-secret',
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
@@ -61,78 +105,59 @@ app.get('/admin', (req, res) => {
     }
 });
 
-// Auth endpoints
-const usersDbPath = getDbPath('users.json');
-
-// Helper to get users
-function getUsers() {
-    try {
-        const data = fs.readFileSync(usersDbPath, 'utf8');
-        return JSON.parse(data).users || [];
-    } catch (e) {
-        return [];
-    }
-}
-
-function saveUsers(users) {
-    fs.writeFileSync(usersDbPath, JSON.stringify({ users }, null, 2));
-}
-
 // Helper to hash passwords
 function hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
 }
 
 // User & Admin Login Post
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
-    
-    if (!password) {
-        return res.status(400).json({ success: false, message: 'Password is required' });
-    }
+    if (!password) return res.status(400).json({ success: false, message: 'Password is required' });
     
     const hashedPassword = hashPassword(password);
     
-    // Check if admin
     if (email === 'admin' && (password === 'admin123' || hashedPassword === hashPassword('admin123'))) {
         req.session.isAdmin = true;
         return res.json({ success: true, redirect: '/admin' });
     }
 
-    // Check normal users
-    const users = getUsers();
-    const user = users.find(u => u.email === email && (u.password === hashedPassword || u.password === password));
+    if (!MONGODB_URI) return res.status(500).json({ success: false, message: 'Database disconnected' });
 
-    if (user) {
-        req.session.user = email;
-        res.json({ success: true, redirect: '/' });
-    } else {
-        res.status(401).json({ success: false, message: 'Invalid credentials' });
+    try {
+        const user = await User.findOne({ email });
+        if (user && (user.password === hashedPassword || user.password === password)) {
+            req.session.user = email;
+            res.json({ success: true, redirect: '/' });
+        } else {
+            res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
 // User Signup Post
-app.post('/api/auth/signup', (req, res) => {
+app.post('/api/auth/signup', async (req, res) => {
     const { email, password } = req.body;
-    const users = getUsers();
-    
     if (!password || password.length < 6) {
         return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
     }
     
-    if (users.find(u => u.email === email)) {
-        return res.status(400).json({ success: false, message: 'Email already exists' });
+    if (!MONGODB_URI) return res.status(500).json({ success: false, message: 'Database disconnected' });
+
+    try {
+        const existingUser = await User.findOne({ email });
+        if (existingUser) return res.status(400).json({ success: false, message: 'Email already exists' });
+        
+        await User.create({ email, password: hashPassword(password) });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server error' });
     }
-    
-    users.push({ email, password: hashPassword(password) });
-    saveUsers(users);
-    res.json({ success: true });
 });
 
-// Forgot Password Mock
 app.post('/api/auth/forgot-password', (req, res) => {
-    const { email } = req.body;
-    // In a real app we'd send an email. For mockup just return true.
     res.json({ success: true });
 });
 
@@ -142,40 +167,24 @@ app.post('/api/admin/logout', (req, res) => {
 });
 
 // Products API
-const dataFile = getDbPath('data.json');
-
-// Init default data if empty
-function getProducts() {
-    try {
-        const data = fs.readFileSync(dataFile, 'utf8');
-        return JSON.parse(data).products || [];
-    } catch (e) {
-        const initialData = {
-            products: [
-                { id: 1, name: "Men's Classic Shirt", description: "A high quality classic shirt for men.", price: 1500, category: "Men", inStock: true, image: "https://images.unsplash.com/photo-1596755094514-f87e32f85e98?auto=format&fit=crop&w=500&q=80" },
-                { id: 2, name: "Women's Elegant Skirt", description: "Elegant skirt suitable for professional and formal wear.", price: 2000, category: "Women", inStock: true, image: "https://images.unsplash.com/photo-1583496661160-c58cb2206269?auto=format&fit=crop&w=500&q=80" },
-                { id: 3, name: "Kids Casual Outfit", description: "Comfortable and durable outfit for kids.", price: 1200, category: "Kids", inStock: true, image: "https://images.unsplash.com/photo-1519241047957-be31d7379a5d?auto=format&fit=crop&w=500&q=80" },
-                { id: 4, name: "Leather Shoes (Men)", description: "Premium genuine leather shoes.", price: 4500, category: "Shoes", inStock: true, image: "https://images.unsplash.com/photo-1614252339460-e1caad5188bf?auto=format&fit=crop&w=500&q=80" },
-                { id: 5, name: "Women's Heels", description: "Stylish and comfortable heels for everyday wear.", price: 3500, category: "Shoes", inStock: true, image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=500&q=80" },
-                { id: 6, name: "Designer Trousers (Women)", description: "Chic designer trousers with a perfect fit.", price: 2500, category: "Women", inStock: true, image: "https://images.unsplash.com/photo-1509631179647-0c114314777c?auto=format&fit=crop&w=500&q=80" },
-                { id: 7, name: "Kids Denim Jacket", description: "Warm and cool denim jacket for kids.", price: 1800, category: "Kids", inStock: true, image: "https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=500&q=80" },
-                { id: 8, name: "Men's Leather Jacket", description: "A tough, classic leather jacket.", price: 6500, category: "Men", inStock: false, image: "https://images.unsplash.com/photo-1521223830155-f2cb1aa281e4?auto=format&fit=crop&w=500&q=80" },
-                { id: 9, name: "Women's Handbag", description: "Spacious and elegant designer handbag.", price: 2200, category: "Women", inStock: true, image: "https://images.unsplash.com/photo-1584916201218-f4242ceb4809?auto=format&fit=crop&w=500&q=80" },
-                { id: 10, name: "Formal Men's Shoes", description: "Sharp, formal shoes for office or special events.", price: 4000, category: "Shoes", inStock: true, image: "https://images.unsplash.com/photo-1588602635925-50a8d46fb59b?auto=format&fit=crop&w=500&q=80" }
-            ]
-        };
-        fs.writeFileSync(dataFile, JSON.stringify(initialData, null, 2));
-        return initialData.products;
+app.get('/api/products', async (req, res) => {
+    // If no DB URI, attempt to read old data.json gracefully to prevent UI crash locally
+    if (!MONGODB_URI) {
+        try {
+            const dataFile = path.join(__dirname, 'data.json');
+            const data = fs.readFileSync(dataFile, 'utf8');
+            return res.json(JSON.parse(data).products || []);
+        } catch (e) {
+            return res.json([]);
+        }
     }
-}
 
-function saveProducts(products) {
-    fs.writeFileSync(dataFile, JSON.stringify({ products }, null, 2));
-}
-
-// GET all products
-app.get('/api/products', (req, res) => {
-    res.json(getProducts());
+    try {
+        const products = await Product.find({}).sort({ id: 1 });
+        res.json(products);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch products' });
+    }
 });
 
 // Admin ONLY middleware for CRUD
@@ -184,103 +193,91 @@ function requireAdmin(req, res, next) {
     res.status(403).json({ error: 'Unauthorized' });
 }
 
-// POST create product
-app.post('/api/products', requireAdmin, upload.single('image'), (req, res) => {
-    const products = getProducts();
-    const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
-    
-    let imageStr = "https://via.placeholder.com/500";
-    if (req.file) {
-        imageStr = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-    }
+app.post('/api/products', requireAdmin, upload.single('image'), async (req, res) => {
+    if (!MONGODB_URI) return res.status(500).json({ error: 'Database disconnected' });
 
-    const newProduct = {
-        id: newId,
-        name: req.body.name,
-        description: req.body.description || '',
-        category: req.body.category,
-        price: Number(req.body.price),
-        inStock: req.body.inStock === 'true',
-        image: imageStr
-    };
-    
-    products.push(newProduct);
-    saveProducts(products);
-    res.json({ success: true, product: newProduct });
-});
-
-// PUT update product
-app.put('/api/products/:id', requireAdmin, upload.single('image'), (req, res) => {
-    const products = getProducts();
-    const idx = products.findIndex(p => p.id === Number(req.params.id));
-    if (idx === -1) return res.status(404).json({ error: 'Product not found' });
-    
-    const currentProduct = products[idx];
-    
-    let imageStr = currentProduct.image;
-    if (req.file) {
-        imageStr = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-    }
-
-    products[idx] = {
-        ...currentProduct,
-        name: req.body.name || currentProduct.name,
-        description: req.body.description !== undefined ? req.body.description : currentProduct.description,
-        category: req.body.category || currentProduct.category,
-        price: req.body.price ? Number(req.body.price) : currentProduct.price,
-        inStock: req.body.inStock !== undefined ? req.body.inStock === 'true' : currentProduct.inStock,
-        image: imageStr
-    };
-    
-    saveProducts(products);
-    res.json({ success: true, product: products[idx] });
-});
-
-// DELETE product
-app.delete('/api/products/:id', requireAdmin, (req, res) => {
-    let products = getProducts();
-    products = products.filter(p => p.id !== Number(req.params.id));
-    saveProducts(products);
-    res.json({ success: true });
-});
-
-// Orders API (FR-13: Store submitted transaction details)
-const ordersFile = getDbPath('orders.json');
-
-function getOrders() {
     try {
-        const data = fs.readFileSync(ordersFile, 'utf8');
-        return JSON.parse(data).orders || [];
-    } catch (e) {
-        return [];
+        const latestProduct = await Product.findOne().sort({ id: -1 });
+        const newId = latestProduct ? latestProduct.id + 1 : 1;
+        
+        let imageStr = "https://via.placeholder.com/500";
+        if (req.file) {
+            imageStr = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        }
+
+        const newProduct = await Product.create({
+            id: newId,
+            name: req.body.name,
+            description: req.body.description || '',
+            category: req.body.category,
+            price: Number(req.body.price),
+            inStock: req.body.inStock === 'true',
+            image: imageStr
+        });
+        res.json({ success: true, product: newProduct });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error adding product' });
     }
-}
+});
 
-function saveOrders(orders) {
-    fs.writeFileSync(ordersFile, JSON.stringify({ orders }, null, 2));
-}
+app.put('/api/products/:id', requireAdmin, upload.single('image'), async (req, res) => {
+    if (!MONGODB_URI) return res.status(500).json({ error: 'Database disconnected' });
 
-app.post('/api/orders', (req, res) => {
+    try {
+        const product = await Product.findOne({ id: Number(req.params.id) });
+        if (!product) return res.status(404).json({ error: 'Product not found' });
+
+        let imageStr = product.image;
+        if (req.file) {
+            imageStr = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        }
+
+        product.name = req.body.name || product.name;
+        product.description = req.body.description !== undefined ? req.body.description : product.description;
+        product.category = req.body.category || product.category;
+        product.price = req.body.price ? Number(req.body.price) : product.price;
+        product.inStock = req.body.inStock !== undefined ? req.body.inStock === 'true' : product.inStock;
+        product.image = imageStr;
+        
+        await product.save();
+        res.json({ success: true, product });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error updating product' });
+    }
+});
+
+app.delete('/api/products/:id', requireAdmin, async (req, res) => {
+    if (!MONGODB_URI) return res.status(500).json({ error: 'Database disconnected' });
+
+    try {
+        await Product.deleteOne({ id: Number(req.params.id) });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error deleting product' });
+    }
+});
+
+// Orders API
+app.post('/api/orders', async (req, res) => {
     const { mpesaCode, amount, items } = req.body;
+    if (!mpesaCode) return res.status(400).json({ success: false, message: 'M-Pesa code is required' });
+    if (!MONGODB_URI) return res.status(500).json({ success: false, message: 'Database disconnected' });
     
-    if (!mpesaCode) {
-        return res.status(400).json({ success: false, message: 'M-Pesa code is required' });
+    try {
+        const latestOrder = await Order.findOne().sort({ id: -1 });
+        const newId = latestOrder ? latestOrder.id + 1 : 1;
+        
+        await Order.create({
+            id: newId,
+            mpesaCode,
+            amount,
+            items,
+            status: 'Pending'
+        });
+        res.json({ success: true, orderId: newId });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Server error creating order' });
     }
-    
-    const orders = getOrders();
-    const newOrder = {
-        id: orders.length > 0 ? Math.max(...orders.map(o => o.id)) + 1 : 1,
-        mpesaCode,
-        amount,
-        items,
-        date: new Date().toISOString(),
-        status: 'Pending'
-    };
-    
-    orders.push(newOrder);
-    saveOrders(orders);
-    
-    res.json({ success: true, orderId: newOrder.id });
 });
 
 // Global Error Handler
