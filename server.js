@@ -3,7 +3,6 @@ const express = require('express');
 const cookieSession = require('cookie-session');
 const path = require('path');
 const fs = require('fs');
-const os = require('os');
 const multer = require('multer');
 const compression = require('compression');
 const crypto = require('crypto');
@@ -18,12 +17,11 @@ if (MONGODB_URI) {
     mongoose.connect(MONGODB_URI)
         .then(async () => {
             console.log('Connected to MongoDB via Mongoose');
-            
             // Auto-migration from data.json for products
-            const count = await Product.countDocuments();
-            if (count === 0) {
-                console.log('Migrating existing products from data.json to MongoDB...');
-                try {
+            try {
+                const count = await Product.countDocuments();
+                if (count === 0) {
+                    console.log('Migrating existing products from data.json to MongoDB...');
                     const dataFile = path.join(__dirname, 'data.json');
                     if (fs.existsSync(dataFile)) {
                         const data = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
@@ -32,14 +30,14 @@ if (MONGODB_URI) {
                             console.log(`Successfully migrated ${data.products.length} products to MongoDB!`);
                         }
                     }
-                } catch (e) {
-                    console.error('Migration failed:', e);
                 }
+            } catch (e) {
+                console.error('Migration failed:', e);
             }
         })
         .catch(err => console.error('MongoDB connection error:', err));
 } else {
-    console.warn('WARNING: MONGODB_URI is not defined in environment variables. Database operations will not work locally unless set!');
+    console.warn('WARNING: MONGODB_URI is not defined in environment variables. Database operations will not work properly!');
 }
 
 // Schemas
@@ -183,6 +181,7 @@ app.get('/api/products', async (req, res) => {
         const products = await Product.find({}).sort({ id: 1 });
         res.json(products);
     } catch (err) {
+        console.error('Failed to fetch products:', err);
         res.status(500).json({ error: 'Failed to fetch products' });
     }
 });
@@ -216,6 +215,7 @@ app.post('/api/products', requireAdmin, upload.single('image'), async (req, res)
         });
         res.json({ success: true, product: newProduct });
     } catch (err) {
+        console.error('Error adding product:', err);
         res.status(500).json({ error: 'Server error adding product' });
     }
 });
@@ -242,6 +242,7 @@ app.put('/api/products/:id', requireAdmin, upload.single('image'), async (req, r
         await product.save();
         res.json({ success: true, product });
     } catch (err) {
+        console.error('Error updating product:', err);
         res.status(500).json({ error: 'Server error updating product' });
     }
 });
@@ -253,6 +254,7 @@ app.delete('/api/products/:id', requireAdmin, async (req, res) => {
         await Product.deleteOne({ id: Number(req.params.id) });
         res.json({ success: true });
     } catch (err) {
+        console.error('Error deleting product:', err);
         res.status(500).json({ error: 'Server error deleting product' });
     }
 });
@@ -276,6 +278,7 @@ app.post('/api/orders', async (req, res) => {
         });
         res.json({ success: true, orderId: newId });
     } catch (err) {
+        console.error('Error creating order:', err);
         res.status(500).json({ success: false, message: 'Server error creating order' });
     }
 });
@@ -290,6 +293,10 @@ app.use((err, req, res, next) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+module.exports = app;
+
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Server is running on http://localhost:${PORT}`);
+    });
+}
